@@ -1,0 +1,838 @@
+//「 🐸🐸🐸 ดึงข้อมูลมาจากชีทชื่อ SETTING 🐸🐸🐸 」
+    let file = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('SETTING');  //🧿เป็นการอ้างอิงแหล่งถึงไฟล์ปัจจุบันที่ใช้งานอยู่ ในชีทที่ชื่อว่า "SETTING"💥
+    let file_id = file.getRange('C5').getValue();                                //🧿ข้อมูลชีทไอดี > ดึงมาจากเซล์ C5
+    let token_line = file.getRange('C6').getValue();                             //🧿ข้อมูลโทเค่น > ดึงมาจากเซล์ C6
+
+    let CHANNEL_ACCESS_TOKEN = token_line;
+    let line_endpoint = 'https://api.line.me/v2/bot/message/reply';
+
+    let data_sheet = SpreadsheetApp.openById(file_id).getSheets()[0]             //🧿อ้างอิงจากโค้ดบรรทัดที่ 2 บรรทัดนี้จะเป็นการบอกตำแหน่งของชีทที่เราจะไปดึงข้อมูลมา
+    let data_table = data_sheet.getRange(2, 1, data_sheet.getLastRow(), data_sheet.getLastColumn()).getValues(); //🧿บอกขอบเขตของฐานข้อมูลที่เราจะไปดึงข้อมูลมา
+    let result = 'ไม่พบข้อมูลที่ค้นหา';  //🧿กรณีไม่มีข้อมูลในฐานข้อมูล ให้แสดงคำว่า 'ไม่พบข้อมูลที่ค้นหา'⚠️#A1
+// ✂〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰 จบ SETTING ⬛️
+
+
+//「 🐸🐸🐸 ฟังก์ชั่น doPost 🐸🐸🐸 」
+  function doPost(e) {
+    let json = JSON.parse(e.postData.contents);     // 🧿 เป็นการแปลข้อความ (จากภาษา JSON เป็นภาษา JavaScript)
+    let message = json.events[0].message.text;      // 🧿 เป็นการหยิบข้อความที่แปลมาเปิดอ่าน 
+    let reply_token = json.events[0].replyToken;    // 🧿 เป็นการระบุว่าจะให้ส่งผลลัพธ์ส่งไปที่ไหน ในที่นี้ให้ส่งไปที่โทเค่น (Token เปรียบเสมือน ID CARD หรือ PASSPORT)
+
+    for (let i = 0; i < data_table.length; i++) 
+    {
+      if (data_table[i][0] == message) // 🧿ถ้าค่าที่ถูกส่งมามีค่าตรงกับข้อมูลใน Google Sheet แถวที่ i คอลัมน์ A 
+                                       // 🧿(คอลัมน์ A=0, B=1, C=2 ไล่ไปเรื่อย ๆ อยู่ที่ว่าคำที่ต้องการค้นหาอยู่คอลัมน์ไหน) 
+          {                      
+            i = i + 2;
+            let column_A = data_sheet.getRange(i, 1).getValue();   // 🧿รหัสผู้ใช้ 
+            let column_B = data_sheet.getRange(i, 2).getValue();   // 🧿ชื่อ-สกุล 
+            let column_C = data_sheet.getRange(i, 3).getValue();   // 🧿ชั้นปีที่
+            let column_D = data_sheet.getRange(i, 4).getValue();  // 🧿เลขที่ 
+            let column_E = data_sheet.getRange(i, 5).getValue();   // 🧿งานที่1 
+            let column_F = data_sheet.getRange(i, 6).getValue();   // 🧿งานที่2        
+            let column_G = data_sheet.getRange(i, 7).getValue();   // 🧿งานที่3
+            let column_H = data_sheet.getRange(i, 8).getValue();   // 🧿งานที่4
+            let column_I = data_sheet.getRange(i, 9).getValue();   // 🧿งานที่5
+            let column_J = data_sheet.getRange(i, 10).getValue();  // 🧿งานที่6
+            let column_K = data_sheet.getRange(i, 11).getValue();  // 🧿งานที่7
+            let column_L = data_sheet.getRange(i, 12).getValue();  // 🧿งานที่8
+            let column_M = data_sheet.getRange(i, 13).getValue();  // 🧿งานที่9 
+            let column_N = data_sheet.getRange(i, 14).getValue();  // 🧿งานที่10 
+            let column_O = data_sheet.getRange(i, 15).getValue();  // 🧿งานที่11 
+            let column_P = data_sheet.getRange(i, 16).getValue();  // 🧿คะแนนสะสม 
+            let column_Q = data_sheet.getRange(i, 17).getValue();  // 🧿เกรดเฉลี่ย 
+            let column_R = data_sheet.getRange(i, 18).getValue();  // 🧿เกรด 
+            
+            grade_color = "#45919d"  // 🧿กำหนดสีพื้นฐาน และเปลี่ยนสีตามกำหนด ต้น+A
+        if(column_R == 'A') // (ต้น+A)
+        { grade_color = "#ff0000" }
+
+let columnEColor = (column_E === '-' || column_E <= 5) ? '#FF0000' : '#00FF00';//น้อยกว่าหรือเท่ากับ 5 เป็นสีแดง และ มากกว่า 5 เป็นสีเขียว
+let columnFColor = (column_F === '-' || column_F <= 5) ? '#FF0000' : '#00FF00';
+let columnGColor = (column_G === '-' || column_G <= 5) ? '#FF0000' : '#00FF00';
+let columnHColor = (column_H === '-' || column_H <= 5) ? '#FF0000' : '#00FF00';
+let columnIColor = (column_I === '-' || column_I <= 5) ? '#FF0000' : '#00FF00';
+let columnJColor = (column_J === '-' || column_J <= 5) ? '#FF0000' : '#00FF00';
+let columnKColor = (column_K === '-' || column_K <= 5) ? '#FF0000' : '#00FF00';
+let columnLColor = (column_L === '-' || column_L <= 5) ? '#FF0000' : '#00FF00';
+let columnMColor = (column_M === '-' || column_M <= 5) ? '#FF0000' : '#00FF00';
+let columnNColor = (column_N === '-' || column_N <= 5) ? '#FF0000' : '#00FF00';
+let columnOColor = (column_O === '-' || column_O <= 5) ? '#FF0000' : '#00FF00';
+
+
+
+     //       let date = new Date(column_F);                                       // 🧿เป็นการแก้ปัญหาการแสดงผลวันที่ใน flex (บางเครื่องอาจจะไม่พบปัญหานี้)
+      //          date.setDate(date.getDate() + 1);                                // 🧿เป็นการแก้ปัญหาการแสดงผลวันที่ใน flex (บางเครื่องอาจจะไม่พบปัญหานี้)
+      //      let formattedDate = Utilities.formatDate(date, "GMT", "dd/MM/yyyy"); // 🧿เป็นการแก้ปัญหาการแสดงผลวันที่ใน flex (บางเครื่องอาจจะไม่พบปัญหานี้)
+                   
+            result = 
+
+                    /* ▰▱▰▱▰▱▰▱ 🌔 เริ่มต้น Flex-simulator (🚩START) 🌔 ▰▱▰▱▰▱▰▱ */ 
+                     {
+                        "type": "bubble",
+                        "size": "mega",//🧿ขนาดของการ์ด flex มีให้เลือกดังนี้ เรียงจากใหญ่ไปเล็ก giga, mega(default), kilo, hecto, deca, micro, nano
+                        "hero": {
+                          "type": "box",
+                          "layout": "vertical",
+                          "contents": [
+                            
+                            {
+                              "type": "box",
+                              "layout": "vertical",
+                              "contents": [
+                                {
+                                  "type": "text",
+                                  "text": "สรุปผลการเรียน",
+                                  "weight": "bold",
+                                  "size": "xl",//เรียงจากเล็กไปใหญ่ xxs, xs, sm, md, lg, xl, xxl, 3xl, 4xl, 5xl,
+                                  "align": "center",
+                                  "margin": "md",
+                                  "adjustMode": "shrink-to-fit",
+                                  
+                                  //https://medium.com/linedevth/10-%E0%B8%9F%E0%B8%B5%E0%B9%80%E0%B8%88%E0%B8%AD%E0%B8%A3%E0%B9%8C%E0%B9%83%E0%B8%AB%E0%B8%A1%E0%B9%88%E0%B9%83%E0%B8%99-flex-message-%E0%B8%9B%E0%B8%B5-2020-%E0%B8%AD%E0%B8%B4%E0%B8%AA%E0%B8%A3%E0%B8%B0%E0%B8%97%E0%B8%B5%E0%B9%88%E0%B9%80%E0%B8%AB%E0%B8%99%E0%B8%B7%E0%B8%AD%E0%B8%81%E0%B8%A7%E0%B9%88%E0%B8%B2%E0%B8%82%E0%B8%AD%E0%B8%87%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%AD%E0%B8%AD%E0%B8%81%E0%B9%81%E0%B8%9A%E0%B8%9A%E0%B8%82%E0%B9%89%E0%B8%AD%E0%B8%84%E0%B8%A7%E0%B8%B2%E0%B8%A1%E0%B9%83%E0%B8%99-line-47d9ba2cf9ed
+                                  "color": "#2A5CAA"
+                                }
+                              ],
+                                  //"margin": "sm", //sm, md, lg,xl.ห่างด้านบน
+                                  "borderWidth": "light",
+                                  //"cornerRadius": "xs",//https://tailwindcss.com/docs/border-radius
+                                  "backgroundColor": "#CBDFBD",
+                                  "height": "36px"
+                            },
+                            //╔══🔯══════════════ชื่อ-สกุล══════════════🔯══╗
+
+                            {
+                              "type": "box",
+                              "layout": "vertical",
+                              "contents": [
+                                {
+                                  "type": "text",
+                                  "text": column_B,
+                                  "color": "#45919d",
+                                  "align": "center",
+                                  "margin": "xl",
+                                  "size": "xl",
+                                  "weight": "bold"
+                                }
+                              ],
+                            }
+                            //╚══🔯══════════════ชื่อ-สกุล══════════════🔯══╝
+                          ]
+                        },
+                        "body": {
+                          "type": "box",
+                          "layout": "vertical",
+                          "contents": [
+                            
+                            
+                            {
+                              "type": "box",
+                              "layout": "horizontal",
+                              "contents": [
+                                {
+                                  "type": "text",
+                                  "text": ""+column_C,
+                                  "align": "center",
+                                  "size": "xl",
+                                  "weight": "bold",
+                                  "color": "#45919d"
+                                },
+                                {
+                                  "type": "text",
+                                  "text": ""+column_D,
+                                  "align": "center",
+                                  "size": "xl",
+                                  "weight": "bold",
+                                  "color": "#45919d"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "box",
+                              "layout": "horizontal",
+                              "contents": [
+                                {
+                                  "type": "text",
+                                  "text": "ชั้นปีที่",
+                                  "align": "center",
+                                  "size": "md",
+                                  "color": "#45919d"
+                                },
+                                {
+                                  "type": "text",
+                                  "text": "เลขที่",
+                                  "align": "center",
+                                  "size": "md",
+                                  "color": "#45919d"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "box",
+                              "layout": "vertical",
+                              "contents": [
+
+                              //╔══🔯══════════════งานที่1══════════════🔯══╗
+                                {
+                                  "type": "box",
+                                  "layout": "vertical",
+                                  "margin": "none",
+                                  "spacing": "sm",
+                                  "contents": [
+                                    {
+                                      "type": "box",
+                                      "layout": "baseline",
+                                      "spacing": "none",
+                                      "contents": [
+                                        {
+                                          "type": "text",
+                                          "text": "งานที่ 1",
+                                          "color": "#FFFFFF",
+                                          "size": "md",
+                                          "align": "center",
+                                          "flex": 2,
+                                          "margin": "xxl" ,
+                                          "gravity": "center"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "text": "ภาษาท่า",
+                                          "wrap": true,
+                                          "color": "#FFFFFF",
+                                          "size": "md",
+                                          "flex": 5,
+                                          "align": "center",
+                                          "gravity": "center"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "box",
+                                      "layout": "vertical",
+                                      "margin": "none",
+                                      "spacing": "sm",
+                                      "contents": [
+                                        {
+                                          "type": "box",
+                                          "layout": "baseline",
+                                          "spacing": "none",
+                                          "contents": [
+                                            {
+                                              "type": "text",
+                                              "text": "" + column_E + "/10",
+                                              "color": columnEColor,
+                                              "size": "md",
+                                              "align": "center",
+                                              "margin": "xxl" ,
+                                              "flex": 2 
+                                            },
+                                            {
+                                              "type": "text",
+                                              "text": "คะแนน",
+                                              "wrap": true,
+                                              "color": "#a5eeee",
+                                              "size": "md",
+                                              "flex": 5,
+                                              "align": "center"
+                                            }
+                                          ]
+                                        } //xx
+                                      ],
+                                      "backgroundColor": "#404143"
+                                    }
+                                  ],
+                                  "margin": "md",
+                                  "borderWidth": "light",
+                                  "cornerRadius": "lg",
+                                  "backgroundColor": "#404143",
+                                },
+                              //╚══🔯══════════════งานที่1══════════════🔯══╝
+                              
+                              //╔══🔯══════════════งานที่2══════════════🔯══╗
+                                {
+                                  "type": "box",
+                                  "layout": "vertical",
+                                  "margin": "none",
+                                  "spacing": "sm",
+                                  "contents": [
+                                    {
+                                      "type": "box",
+                                      "layout": "baseline",
+                                      "spacing": "none",
+                                      "contents": [
+                                        {
+                                          "type": "text",
+                                          "text": "งานที่ 2",
+                                          "color": "#FFFFFF",
+                                          "size": "md",
+                                          "align": "center",
+                                          "flex": 2,
+                                          "margin": "xxl" ,
+                                          "gravity": "center"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "text": "สอบการแสดงนาฏศิลป์พื้นเมือง",
+                                          "wrap": true,
+                                          "color": "#FFFFFF",
+                                          "size": "md",
+                                          "flex": 5,
+                                          "align": "center",
+                                          "gravity": "center"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "box",
+                                      "layout": "vertical",
+                                      "margin": "none",
+                                      "spacing": "sm",
+                                      "contents": [
+                                        {
+                                          "type": "box",
+                                          "layout": "baseline",
+                                          "spacing": "none",
+                                          "contents": [
+                                            {
+                                              "type": "text",
+                                              "text": "" + column_F + "/20",
+                                              "color": columnFColor,
+                                              "size": "md",
+                                              "align": "center",
+                                              "margin": "xxl" ,
+                                              "flex": 2 
+                                            },
+                                            {
+                                              "type": "text",
+                                              "text": "คะแนน",
+                                              "wrap": true,
+                                              "color": "#a5eeee",
+                                              "size": "md",
+                                              "flex": 5,
+                                              "align": "center"
+                                            }
+                                          ]
+                                        } //xx
+                                      ],
+                                      "backgroundColor": "#404143"
+                                    }
+                                  ],
+                                  "margin": "md",
+                                  "borderWidth": "light",
+                                  "cornerRadius": "lg",
+                                  "backgroundColor": "#404143",
+                                },
+                              //╚══🔯══════════════งานที่2══════════════🔯══╝
+
+                              //╔══🔯══════════════งานที่3══════════════🔯══╗
+                                {
+                                  "type": "box",
+                                  "layout": "vertical",
+                                  "margin": "none",
+                                  "spacing": "sm",
+                                  "contents": [
+                                    {
+                                      "type": "box",
+                                      "layout": "baseline",
+                                      "spacing": "none",
+                                      "contents": [
+                                        {
+                                          "type": "text",
+                                          "text": "งานที่ 3",
+                                          "color": "#FFFFFF",
+                                          "size": "md",
+                                          "align": "center",
+                                          "flex": 2,
+                                          "margin": "xxl" ,
+                                          "gravity": "center"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "text": "อุปกรณ์ประกอบการแสดง",
+                                          "wrap": true,
+                                          "color": "#FFFFFF",
+                                          "size": "md",
+                                          "flex": 5,
+                                          "align": "center",
+                                          "gravity": "center"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "box",
+                                      "layout": "vertical",
+                                      "margin": "none",
+                                      "spacing": "sm",
+                                      "contents": [
+                                        {
+                                          "type": "box",
+                                          "layout": "baseline",
+                                          "spacing": "none",
+                                          "contents": [
+                                            {
+                                              "type": "text",
+                                              "text": "" + column_G + "/10",
+                                              "color": columnGColor,
+                                              "size": "md",
+                                              "align": "center",
+                                              "margin": "xxl" ,
+                                              "flex": 2 
+                                            },
+                                            {
+                                              "type": "text",
+                                              "text": "คะแนน",
+                                              "wrap": true,
+                                              "color": "#a5eeee",
+                                              "size": "md",
+                                              "flex": 5,
+                                              "align": "center"
+                                            }
+                                          ]
+                                        } //xx
+                                      ],
+                                      "backgroundColor": "#404143"
+                                    }
+                                  ],
+                                  "margin": "md",
+                                  "borderWidth": "light",
+                                  "cornerRadius": "lg",
+                                  "backgroundColor": "#404143",
+                                },
+                              //╚══🔯══════════════งานที่3══════════════🔯══╝
+
+                              //╔══🔯══════════════งานที่4══════════════🔯══╗
+                                {
+                                  "type": "box",
+                                  "layout": "vertical",
+                                  "margin": "none",
+                                  "spacing": "sm",
+                                  "contents": [
+                                    {
+                                      "type": "box",
+                                      "layout": "baseline",
+                                      "spacing": "none",
+                                      "contents": [
+                                        {
+                                          "type": "text",
+                                          "text": "งานที่ 4",
+                                          "color": "#FFFFFF",
+                                          "size": "md",
+                                          "align": "center",
+                                          "flex": 2,
+                                          "margin": "xxl" ,
+                                          "gravity": "center"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "text": "สอบร้องรำวงมาตรฐานเพลงหญิงไทยใจงาม",
+                                          "wrap": true,
+                                          "color": "#FFFFFF",
+                                          "size": "md",
+                                          "flex": 5,
+                                          "align": "center",
+                                          "gravity": "center"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "box",
+                                      "layout": "vertical",
+                                      "margin": "none",
+                                      "spacing": "sm",
+                                      "contents": [
+                                        {
+                                          "type": "box",
+                                          "layout": "baseline",
+                                          "spacing": "none",
+                                          "contents": [
+                                            {
+                                              "type": "text",
+                                              "text": "" + column_H + "/10",
+                                              "color": columnHColor,
+                                              "size": "md",
+                                              "align": "center",
+                                              "margin": "xxl" ,
+                                              "flex": 2 
+                                            },
+                                            {
+                                              "type": "text",
+                                              "text": "คะแนน",
+                                              "wrap": true,
+                                              "color": "#a5eeee",
+                                              "size": "md",
+                                              "flex": 5,
+                                              "align": "center"
+                                            }
+                                          ]
+                                        } //xx
+                                      ],
+                                      "backgroundColor": "#404143"
+                                    }
+                                  ],
+                                  "margin": "md",
+                                  "borderWidth": "light",
+                                  "cornerRadius": "lg",
+                                  "backgroundColor": "#404143",
+                                },
+                              //╚══🔯══════════════งานที่4══════════════🔯══╝
+
+                              //╔══🔯══════════════งานที่5══════════════🔯══╗
+                                {
+                                  "type": "box",
+                                  "layout": "vertical",
+                                  "margin": "none",
+                                  "spacing": "sm",
+                                  "contents": [
+                                    {
+                                      "type": "box",
+                                      "layout": "baseline",
+                                      "spacing": "none",
+                                      "contents": [
+                                        {
+                                          "type": "text",
+                                          "text": "งานที่ 5",
+                                          "color": "#FFFFFF",
+                                          "size": "md",
+                                          "align": "center",
+                                          "flex": 2,
+                                          "margin": "xxl" ,
+                                          "gravity": "center"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "text": "สอบรำวงมาตรฐานเพลงหญิงไทยใจงาม",
+                                          "wrap": true,
+                                          "color": "#FFFFFF",
+                                          "size": "md",
+                                          "flex": 5,
+                                          "align": "center",
+                                          "gravity": "center"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "box",
+                                      "layout": "vertical",
+                                      "margin": "none",
+                                      "spacing": "sm",
+                                      "contents": [
+                                        {
+                                          "type": "box",
+                                          "layout": "baseline",
+                                          "spacing": "none",
+                                          "contents": [
+                                            {
+                                              "type": "text",
+                                              "text": "" + column_I + "/20",
+                                              "color": columnIColor,
+                                              "size": "md",
+                                              "align": "center",
+                                              "margin": "xxl" ,
+                                              "flex": 2 
+                                            },
+                                            {
+                                              "type": "text",
+                                              "text": "คะแนน",
+                                              "wrap": true,
+                                              "color": "#a5eeee",
+                                              "size": "md",
+                                              "flex": 5,
+                                              "align": "center"
+                                            }
+                                          ]
+                                        } //xx
+                                      ],
+                                      "backgroundColor": "#404143"
+                                    }
+                                  ],
+                                  "margin": "md",
+                                  "borderWidth": "light",
+                                  "cornerRadius": "lg",
+                                  "backgroundColor": "#404143",
+                                },
+                              //╚══🔯══════════════งานที่5══════════════🔯══╝
+
+                              //╔══🔯══════════════งานที่6══════════════🔯══╗
+                                {
+                                  "type": "box",
+                                  "layout": "vertical",
+                                  "margin": "none",
+                                  "spacing": "sm",
+                                  "contents": [
+                                    {
+                                      "type": "box",
+                                      "layout": "baseline",
+                                      "spacing": "none",
+                                      "contents": [
+                                        {
+                                          "type": "text",
+                                          "text": "งานที่ 6",
+                                          "color": "#FFFFFF",
+                                          "size": "md",
+                                          "align": "center",
+                                          "flex": 2,
+                                          "margin": "xxl" ,
+                                          "gravity": "center"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "text": "ใบงานรำวง",
+                                          "wrap": true,
+                                          "color": "#FFFFFF",
+                                          "size": "md",
+                                          "flex": 5,
+                                          "align": "center",
+                                          "gravity": "center"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "box",
+                                      "layout": "vertical",
+                                      "margin": "none",
+                                      "spacing": "sm",
+                                      "contents": [
+                                        {
+                                          "type": "box",
+                                          "layout": "baseline",
+                                          "spacing": "none",
+                                          "contents": [
+                                            {
+                                              "type": "text",
+                                              "text": "" + column_J + "/10",
+                                              "color": columnJColor,
+                                              "size": "md",
+                                              "align": "center",
+                                              "margin": "xxl" ,
+                                              "flex": 2 
+                                            },
+                                            {
+                                              "type": "text",
+                                              "text": "คะแนน",
+                                              "wrap": true,
+                                              "color": "#a5eeee",
+                                              "size": "md",
+                                              "flex": 5,
+                                              "align": "center"
+                                            }
+                                          ]
+                                        } //xx
+                                      ],
+                                      "backgroundColor": "#404143"
+                                    }
+                                  ],
+                                  "margin": "md",
+                                  "borderWidth": "light",
+                                  "cornerRadius": "lg",
+                                  "backgroundColor": "#404143",
+                                },
+                              //╚══🔯══════════════งานที่6══════════════🔯══╝
+
+                              //╔══🔯══════════════งานที่7══════════════🔯══╗
+                                {
+                                  "type": "box",
+                                  "layout": "vertical",
+                                  "margin": "none",
+                                  "spacing": "sm",
+                                  "contents": [
+                                    {
+                                      "type": "box",
+                                      "layout": "baseline",
+                                      "spacing": "none",
+                                      "contents": [
+                                        {
+                                          "type": "text",
+                                          "text": "งานที่ 7",
+                                          "color": "#FFFFFF",
+                                          "size": "md",
+                                          "align": "center",
+                                          "flex": 2,
+                                          "margin": "xxl" ,
+                                          "gravity": "center"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "text": "จิตพิสัย",
+                                          "wrap": true,
+                                          "color": "#FFFFFF",
+                                          "size": "md",
+                                          "flex": 5,
+                                          "align": "center",
+                                          "gravity": "center"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "box",
+                                      "layout": "vertical",
+                                      "margin": "none",
+                                      "spacing": "sm",
+                                      "contents": [
+                                        {
+                                          "type": "box",
+                                          "layout": "baseline",
+                                          "spacing": "none",
+                                          "contents": [
+                                            {
+                                              "type": "text",
+                                              "text": "" + column_K + "/10",
+                                              "color": columnKColor,
+                                              "size": "md",
+                                              "align": "center",
+                                              "margin": "xxl" ,
+                                              "flex": 2 
+                                            },
+                                            {
+                                              "type": "text",
+                                              "text": "คะแนน",
+                                              "wrap": true,
+                                              "color": "#a5eeee",
+                                              "size": "md",
+                                              "flex": 5,
+                                              "align": "center"
+                                            }
+                                          ]
+                                        } //xx
+                                      ],
+                                      "backgroundColor": "#404143"
+                                    }
+                                  ],
+                                  "margin": "md",
+                                  "borderWidth": "light",
+                                  "cornerRadius": "lg",
+                                  "backgroundColor": "#404143",
+                                },
+                              //╚══🔯══════════════งานที่7══════════════🔯══╝
+  
+                              ]
+                            },
+                            {
+                              "type": "box",
+                              "layout": "horizontal",
+                              "contents": [
+                                {
+                                  "type": "text",
+                                  "text": ""+column_P,
+                                  "align": "center",
+                                  "size": "xxl",
+                                  "weight": "bold",
+                                  "color": "#45919d"
+                                },{
+                                  "type": "text",
+                                  "text": ""+column_Q,
+                                  "align": "center",
+                                  "size": "xxl",
+                                  "weight": "bold",
+                                  "color": "#45919d"
+                                },
+                                //{
+                                //  "type": "text",
+ //                                 "text": ""+column_R,
+   //                               "align": "center",
+     //                             "size": "xxl",
+       //                           "weight": "bold",
+         //                         "color": grade_color
+           //                     }
+                              ]
+                            },
+                            {
+                              "type": "box",
+                              "layout": "horizontal",
+                              "contents": [
+                                {
+                                  "type": "text",
+                                  "text": "คะแนนรวม",
+                                  "align": "center",
+                                  "size": "md",
+                                  "color": "#45919d"
+                                },
+                                {
+                                  "type": "text",
+                                  "text": "เกรดเฉลี่ย",
+                                  "align": "center",
+                                  "size": "md",
+                                  "color": "#45919d"
+                                },
+ //                               //{
+   //                               "type": "text",
+     //                             "text": "เกรด",
+       //                           "align": "center",
+         //                         "size": "md",
+           //                       "color": "#45919d"
+             //                   
+               //                 }
+                              ]
+                            },
+                            {
+                              "type": "separator",
+                              "margin": "lg"
+                            },
+                            {
+                              "type": "box",
+                              "layout": "vertical",
+                              "contents": [
+                                {
+                                  "type": "text",
+                                  "text": "ออกแบบ โดย สุวิชัย อวยพรชัยกุล",
+                                  "align": "center",
+                                  "margin": "md",
+                                  "wrap": true,
+                                  "adjustMode": "shrink-to-fit",
+                                  "color": "#c3c3c3"
+                                },
+                                {
+                                  "type": "text",
+                                  "text": "คุณครูผู้สอน นางสาวศุภปวีย์ แสงอาวุธ",
+                                  "align": "center",
+                                  "margin": "md",
+                                  "wrap": true,
+                                  "adjustMode": "shrink-to-fit",
+                                  "color": "#c3c3c3"
+                                }
+                              ]
+                            },
+                          ]
+                        }
+                      }
+                    /* ▰▱▰▱▰▱▰▱ 🌒 สิ้นสุด Flex-simulator (🏴󠁧󠁢󠁥󠁮󠁧󠁿STOP)  🌒 ▰▱▰▱▰▱▰▱ */ 
+          }; 
+    };
+
+
+    if (result == 'ไม่พบข้อมูลที่ค้นหา') { //🧿คำที่ต้องการให้แสดงผลเมื่อไม่มีข้อมลในฐาน ⚠️#A1
+      UrlFetchApp.fetch(line_endpoint, {
+        'headers': {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Bearer ' + CHANNEL_ACCESS_TOKEN,
+        },
+        'method': 'post',
+        'payload': JSON.stringify({
+          'replyToken': reply_token,
+          'messages': [{
+            'type': 'text',
+            'text': result
+          }],
+        }),
+      });
+    }
+    else {
+      UrlFetchApp.fetch(line_endpoint, {
+        'headers': {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Bearer ' + CHANNEL_ACCESS_TOKEN,
+        },
+        'method': 'post',
+        'payload': JSON.stringify({
+          'replyToken': reply_token,
+          'messages': [{
+            'type': 'flex',
+            'altText': 'ผลคะแนนมาแล้วจร้า',
+            'contents': result
+          }],
+        }),
+      });
+    }
+    return ContentService.createTextOutput(JSON.stringify({ 'content': 'post ok' })).setMimeType(ContentService.MimeType.JSON); 
+          //🧿เป็นการสร้าง Output เป็นข้อความ และส่งข้อความกลับไปเป็น JSON
+  }
+// ✂〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰 จบฟังก์ชั่น doPost ⬛️
